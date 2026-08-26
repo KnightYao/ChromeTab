@@ -50,7 +50,7 @@ const WEATHER_SETTINGS_KEY = 'weatherSettings';
 const QUOTE_QUEUE_KEY = 'chrometabQuoteQueue';
 const WORD_QUEUE_KEY = 'chrometabWordQueue';
 const WORD_QUEUE_VERSION_KEY = 'chrometabWordQueueVersion';
-const WORD_POOL_VERSION = 4;
+const WORD_POOL_VERSION = 5;
 let weatherDraftMode = 'ip';
 
 const CHINESE_QUOTES = [
@@ -1542,6 +1542,16 @@ document.addEventListener('click', async (e) => {
   if (!actionEl) return;
 
   const action = actionEl.dataset.action;
+
+  if (action === 'refresh-word') {
+    actionEl.disabled = true;
+    try {
+      await renderWordCard();
+    } finally {
+      actionEl.disabled = false;
+    }
+    return;
+  }
 
   if (action === 'toggle-weather-settings') {
     const form = document.getElementById('weatherSettingsForm');
