@@ -15,6 +15,40 @@
 
 'use strict';
 
+const WEATHER_ICONS = {
+  0: 'Clear',
+  1: 'Sunny',
+  2: 'Partly cloudy',
+  3: 'Cloudy',
+  45: 'Fog',
+  48: 'Fog',
+  51: 'Drizzle',
+  53: 'Drizzle',
+  55: 'Drizzle',
+  56: 'Freezing drizzle',
+  57: 'Freezing drizzle',
+  61: 'Rain',
+  63: 'Rain',
+  65: 'Rain',
+  66: 'Freezing rain',
+  67: 'Freezing rain',
+  71: 'Snow',
+  73: 'Snow',
+  75: 'Snow',
+  77: 'Snow',
+  80: 'Showers',
+  81: 'Showers',
+  82: 'Showers',
+  85: 'Snow showers',
+  86: 'Snow showers',
+  95: 'Thunder',
+  96: 'Thunder',
+  99: 'Thunder',
+};
+
+const WEATHER_SETTINGS_KEY = 'weatherSettings';
+let weatherDraftMode = 'ip';
+
 
 /* ----------------------------------------------------------------
    CHROME TABS — Direct API Access
@@ -453,6 +487,173 @@ async function searchBing(query) {
 
   const url = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
   await chrome.tabs.create({ url, active: true });
+}
+
+function getWeatherIconLabel(code) {
+  if (code === 0 || code === 1) return 'SUN';
+  if (code === 2 || code === 3 || code === 45 || code === 48) return 'CLD';
+  if (code >= 51 && code <= 67) return 'RAIN';
+  if (code >= 71 && code <= 86) return 'SNOW';
+  if (code >= 95) return 'STORM';
+  return 'WX';
+}
+
+function setWeatherLoading(message) {
+  const tempEl = document.getElementById('weatherTemp');
+  const conditionEl = document.getElementById('weatherCondition');
+  const placeEl = document.getElementById('weatherPlace');
+  const iconEl = document.getElementById('weatherIcon');
+  if (tempEl) tempEl.textContent = '--';
+  if (conditionEl) conditionEl.textContent = message;
+  if (placeEl) placeEl.textContent = 'Weather';
+  if (iconEl) iconEl.textContent = 'WX';
+}
+
+function setWeatherDisplay({ temperature, code, condition, place, source }) {
+  const tempEl = document.getElementById('weatherTemp');
+  const conditionEl = document.getElementById('weatherCondition');
+  const placeEl = document.getElementById('weatherPlace');
+  const iconEl = document.getElementById('weatherIcon');
+  const kickerEl = document.getElementById('weatherKicker');
+  if (tempEl) tempEl.textContent = `${Math.round(temperature)}°`;
+  if (conditionEl) conditionEl.textContent = condition;
+  if (placeEl) placeEl.textContent = place;
+  if (iconEl) iconEl.textContent = getWeatherIconLabel(code);
+  if (kickerEl) kickerEl.textContent = source === 'custom' ? 'Saved weather' : 'Local weather';
+}
+
+async function getWeatherSettings() {
+  const result = await chrome.storage.local.get(WEATHER_SETTINGS_KEY);
+  return result[WEATHER_SETTINGS_KEY] || { mode: 'ip', city: '' };
+}
+
+async function saveWeatherSettings(settings) {
+  await chrome.storage.local.set({ [WEATHER_SETTINGS_KEY]: settings });
+}
+
+function syncWeatherSettingsUi(settings) {
+  weatherDraftMode = settings.mode === 'custom' ? 'custom' : 'ip';
+  const form = document.getElementById('weatherSettingsForm');
+  const input = document.getElementById('weatherCityInput');
+  const ipBtn = document.querySelector('[data-action="weather-mode-ip"]');
+  const cityBtn = document.querySelector('[data-action="weather-mode-city"]');
+
+  if (input) {
+    input.value = settings.city || '';
+    input.disabled = weatherDraftMode !== 'custom';
+  }
+  if (ipBtn) ipBtn.classList.toggle('active', weatherDraftMode === 'ip');
+  if (cityBtn) cityBtn.classList.toggle('active', weatherDraftMode === 'custom');
+  if (form) form.classList.toggle('city-mode', weatherDraftMode === 'custom');
+}
+
+async function getIpLocation() {
+  const geo = await fetch('https://ipapi.co/json/').then(r => r.ok ? r.json() : null);
+  if (!geo) throw new Error('geo lookup failed');
+  if (geo.latitude == null || geo.longitude == null) throw new Error('missing coordinates');
+  return {
+    latitude: geo.latitude,
+    longitude: geo.longitude,
+    label: [geo.city, geo.region].filter(Boolean).join(', ') || geo.country_name || 'Current IP',
+    source: 'ip',
+  };
+}
+
+async function geocodeCity(city) {
+  const q = (city || '').trim();
+  if (!q) throw new Error('missing city');
+
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`;
+  const data = await fetch(url).then(r => r.ok ? r.json() : null);
+  const place = data && data.results && data.results[0];
+  if (!place) throw new Error('city not found');
+
+  return {
+    latitude: place.latitude,
+    longitude: place.longitude,
+    label: [place.name, place.admin1, place.country].filter(Boolean).join(', '),
+    city: q,
+    source: 'custom',
+  };
+}
+
+async function getWeatherForLocation(location) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(location.latitude)}&longitude=${encodeURIComponent(location.longitude)}&current=temperature_2m,weather_code&timezone=auto`;
+  const weather = await fetch(url).then(r => r.ok ? r.json() : null);
+  if (!weather || !weather.current) throw new Error('weather lookup failed');
+
+  const code = weather.current.weather_code;
+  return {
+    temperature: weather.current.temperature_2m,
+    code,
+    condition: WEATHER_ICONS[code] || 'Weather',
+    place: location.label,
+    source: location.source,
+  };
+}
+
+async function loadWeather() {
+  const tempEl = document.getElementById('weatherTemp');
+  const conditionEl = document.getElementById('weatherCondition');
+  const placeEl = document.getElementById('weatherPlace');
+  const iconEl = document.getElementById('weatherIcon');
+  if (!tempEl || !conditionEl || !placeEl || !iconEl) return;
+
+  try {
+    const settings = await getWeatherSettings();
+    syncWeatherSettingsUi(settings);
+    setWeatherLoading(settings.mode === 'custom' ? 'Loading saved city...' : 'Finding your city...');
+    let location;
+    if (settings.mode === 'custom' && settings.latitude != null && settings.longitude != null) {
+      location = {
+        latitude: settings.latitude,
+        longitude: settings.longitude,
+        label: settings.label || settings.city,
+        source: 'custom',
+      };
+    } else {
+      location = settings.mode === 'custom'
+        ? await geocodeCity(settings.city)
+        : await getIpLocation();
+    }
+    const current = await getWeatherForLocation(location);
+    setWeatherDisplay(current);
+  } catch (err) {
+    console.warn('[chrometab] Weather lookup failed:', err);
+    tempEl.textContent = '--';
+    conditionEl.textContent = 'Weather unavailable';
+    placeEl.textContent = 'Check settings';
+    iconEl.textContent = 'WX';
+  }
+}
+
+function renderCalendar() {
+  const el = document.getElementById('calendarPanel');
+  if (!el) return;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+  const monthLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const cells = [];
+
+  for (const day of weekdays) cells.push(`<span class="calendar-weekday">${day}</span>`);
+  for (let i = 0; i < startOffset; i++) cells.push('<span class="calendar-cell calendar-empty"></span>');
+  for (let day = 1; day <= daysInMonth; day++) {
+    const active = day === today ? ' calendar-today' : '';
+    cells.push(`<span class="calendar-cell${active}">${day}</span>`);
+  }
+
+  el.innerHTML = `
+    <div class="calendar-kicker">This month</div>
+    <div class="calendar-month">${monthLabel}</div>
+    <div class="calendar-grid">${cells.join('')}</div>
+  `;
 }
 
 /**
@@ -1202,6 +1403,25 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
+  if (action === 'toggle-weather-settings') {
+    const form = document.getElementById('weatherSettingsForm');
+    if (form) form.hidden = !form.hidden;
+    return;
+  }
+
+  if (action === 'weather-mode-ip' || action === 'weather-mode-city') {
+    weatherDraftMode = action === 'weather-mode-city' ? 'custom' : 'ip';
+    const form = document.getElementById('weatherSettingsForm');
+    const input = document.getElementById('weatherCityInput');
+    const ipBtn = document.querySelector('[data-action="weather-mode-ip"]');
+    const cityBtn = document.querySelector('[data-action="weather-mode-city"]');
+    if (input) input.disabled = weatherDraftMode !== 'custom';
+    if (ipBtn) ipBtn.classList.toggle('active', weatherDraftMode === 'ip');
+    if (cityBtn) cityBtn.classList.toggle('active', weatherDraftMode === 'custom');
+    if (form) form.classList.toggle('city-mode', weatherDraftMode === 'custom');
+    return;
+  }
+
   // ---- Close duplicate ChromeTab tabs ----
   if (action === 'close-chrometab-dupes') {
     await closeTabOutDupes();
@@ -1448,6 +1668,42 @@ document.addEventListener('click', async (e) => {
 });
 
 document.addEventListener('submit', async (e) => {
+  if (e.target.id === 'weatherSettingsForm') {
+    e.preventDefault();
+    const input = document.getElementById('weatherCityInput');
+    const city = input ? input.value.trim() : '';
+    const mode = weatherDraftMode === 'custom' ? 'custom' : 'ip';
+    if (mode === 'custom' && !city) {
+      showToast('Enter a city first');
+      return;
+    }
+
+    try {
+      if (mode === 'custom') {
+        setWeatherLoading('Saving city...');
+        const location = await geocodeCity(city);
+        await saveWeatherSettings({
+          mode: 'custom',
+          city,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          label: location.label,
+        });
+        const current = await getWeatherForLocation(location);
+        setWeatherDisplay(current);
+      } else {
+        await saveWeatherSettings({ mode: 'ip', city: '' });
+        await loadWeather();
+      }
+      syncWeatherSettingsUi(await getWeatherSettings());
+      showToast('Weather saved');
+    } catch (err) {
+      console.warn('[chrometab] Failed to save weather settings:', err);
+      showToast('Weather city not found');
+    }
+    return;
+  }
+
   if (e.target.id !== 'bingSearchForm') return;
   e.preventDefault();
 
@@ -1513,4 +1769,6 @@ document.addEventListener('input', async (e) => {
 /* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
+renderCalendar();
+loadWeather();
 renderDashboard();

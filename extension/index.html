@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromeTab</title>
 
-  <!-- Google Fonts: Newsreader (for headings/numbers) + DM Sans (for body text) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,31 +13,69 @@
 
 
   <!-- ================================================================
-       HEADER — greeting on the left
+       HEADER — weather, greeting/search, and monthly calendar
        ================================================================ -->
   <header>
-    <div class="header-left">
-      <!-- "Good afternoon" — written by getGreeting() in app.js -->
-      <h1 id="greeting"></h1>
-      <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
-      <div class="date" id="dateDisplay"></div>
+    <aside class="weather-panel" id="weatherPanel" aria-label="Weather">
+      <div class="weather-top">
+        <div class="weather-kicker" id="weatherKicker">Local weather</div>
+        <button class="weather-settings-btn" data-action="toggle-weather-settings" aria-label="Weather settings" title="Weather settings">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.757.426 1.757 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.757-2.924 1.757-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.757-.426-1.757-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          </svg>
+        </button>
+      </div>
+      <div class="weather-main">
+        <span class="weather-temp" id="weatherTemp">--</span>
+        <span class="weather-icon" id="weatherIcon">·</span>
+      </div>
+      <div class="weather-condition" id="weatherCondition">Finding your city...</div>
+      <div class="weather-place" id="weatherPlace">Current IP</div>
+      <form class="weather-settings" id="weatherSettingsForm" hidden>
+        <div class="weather-mode-toggle" role="group" aria-label="Weather source">
+          <button type="button" class="weather-mode-btn active" data-action="weather-mode-ip">IP</button>
+          <button type="button" class="weather-mode-btn" data-action="weather-mode-city">City</button>
+        </div>
+        <input
+          type="text"
+          id="weatherCityInput"
+          class="weather-city-input"
+          placeholder="City, Country"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Weather city"
+        >
+        <button type="submit" class="weather-save-btn">Save</button>
+      </form>
+    </aside>
+
+    <div class="header-main">
+      <div class="header-left">
+        <!-- "Good afternoon" — written by getGreeting() in app.js -->
+        <h1 id="greeting"></h1>
+        <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
+        <div class="date" id="dateDisplay"></div>
+      </div>
+      <form class="header-search" id="bingSearchForm" role="search">
+        <input
+          type="search"
+          id="bingSearchInput"
+          class="bing-search-input"
+          placeholder="Search Bing"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search Bing"
+        >
+        <button type="submit" class="bing-search-btn" aria-label="Search Bing" title="Search Bing">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m1.5-5.4a7.2 7.2 0 1 1-14.4 0 7.2 7.2 0 0 1 14.4 0Z" />
+          </svg>
+        </button>
+      </form>
     </div>
-    <form class="header-search" id="bingSearchForm" role="search">
-      <input
-        type="search"
-        id="bingSearchInput"
-        class="bing-search-input"
-        placeholder="Search Bing"
-        autocomplete="off"
-        spellcheck="false"
-        aria-label="Search Bing"
-      >
-      <button type="submit" class="bing-search-btn" aria-label="Search Bing" title="Search Bing">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m1.5-5.4a7.2 7.2 0 1 1-14.4 0 7.2 7.2 0 0 1 14.4 0Z" />
-        </svg>
-      </button>
-    </form>
+
+    <aside class="calendar-panel" id="calendarPanel" aria-label="Current month calendar"></aside>
   </header>
 
   <!-- ================================================================
@@ -123,7 +157,7 @@
       </div>
     </div>
     <div class="last-refresh">
-      <span style="color: var(--muted); font-size: 11px;"><a href="https://github.com/zarazhangrui/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">ChromeTab</a> by <a href="https://x.com/zarazhangrui" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Zara</a></span>
+      <span style="color: var(--muted); font-size: 11px;"><a href="https://github.com/KnightYao/ChromeTab.git" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">ChromeTab</a> by <a href="" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Knight Yao</a></span>
     </div>
   </footer>
 

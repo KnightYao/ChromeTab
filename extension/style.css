@@ -1,30 +1,33 @@
 /* ============================================================
-   Tab Mission Control — Dashboard Styles
-   Extracted directly from mockup.html — do not modify unless
-   also updating the mockup. This is the approved design.
+   ChromeTab — Dashboard Styles
    ============================================================ */
 
 :root {
-  --ink: #f5efe6;
-  --paper: #10100f;
-  --warm-gray: #34302b;
-  --muted: #a49a90;
-  --accent-amber: #e09a5c;
-  --accent-sage: #83a889;
-  --accent-slate: #8ea2b1;
-  --accent-rose: #d07070;
-  --status-active: #87bf8d;
-  --status-cooling: #d6a84e;
-  --status-abandoned: #d07070;
-  --card-bg: #181715;
+  --ink: #f6f7fb;
+  --paper: #111211;
+  --warm-gray: #30333a;
+  --muted: #98a2b3;
+  --accent-amber: #f3b562;
+  --accent-sage: #7dd3a7;
+  --accent-slate: #8ab4f8;
+  --accent-rose: #f07f83;
+  --status-active: #7dd3a7;
+  --status-cooling: #f3b562;
+  --status-abandoned: #f07f83;
+  --card-bg: #191b1f;
+  --panel-bg: #17191d;
+  --panel-bg-soft: #202329;
   --shadow: rgba(0, 0, 0, 0.36);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--paper);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(138, 180, 248, 0.09), transparent 32%),
+    radial-gradient(circle at 82% 0%, rgba(125, 211, 167, 0.07), transparent 28%),
+    var(--paper);
   color: var(--ink);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -46,7 +49,7 @@ body::before {
   z-index: 1;
   max-width: 960px;
   margin: 0 auto;
-  padding: 48px 32px 80px;
+  padding: 40px 32px 80px;
 }
 
 /* When the saved-for-later sidebar is open, expand the container
@@ -57,41 +60,48 @@ body::before {
 
 /* ---- Header ---- */
 header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 24px;
-  margin-bottom: 48px;
-  padding-bottom: 24px;
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) minmax(360px, 1fr) minmax(210px, 260px);
+  align-items: stretch;
+  gap: 18px;
+  margin-bottom: 40px;
+  padding-bottom: 28px;
   border-bottom: 1px solid var(--warm-gray);
 }
 
+.header-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
 .header-search {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  width: min(360px, 100%);
-  flex: 0 1 360px;
+  width: min(520px, 100%);
+  margin-top: 20px;
 }
 
 .bing-search-input {
   flex: 1;
   min-width: 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 14px;
   color: var(--ink);
-  background: var(--card-bg);
+  background: rgba(21, 26, 35, 0.88);
   border: 1px solid var(--warm-gray);
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 12px 14px;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .bing-search-input:focus {
-  border-color: var(--accent-amber);
-  box-shadow: 0 0 0 3px rgba(200, 113, 58, 0.08);
+  background: var(--card-bg);
+  border-color: var(--accent-slate);
+  box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.12);
 }
 
 .bing-search-input::placeholder {
@@ -99,11 +109,11 @@ header {
 }
 
 .bing-search-btn {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border: 1px solid var(--warm-gray);
-  border-radius: 6px;
-  background: var(--card-bg);
+  border-radius: 8px;
+  background: var(--panel-bg-soft);
   color: var(--muted);
   display: inline-flex;
   align-items: center;
@@ -116,7 +126,7 @@ header {
 .bing-search-btn:hover {
   border-color: var(--ink);
   color: var(--ink);
-  background: #201e1b;
+  background: #252a31;
 }
 
 .bing-search-btn svg {
@@ -125,32 +135,247 @@ header {
 }
 
 .header-left h1 {
-  font-family: 'Newsreader', serif;
-  font-weight: 300;
-  font-size: 28px;
-  letter-spacing: -0.5px;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 52px;
+  letter-spacing: 0;
   color: var(--ink);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  line-height: 0.98;
 }
 
 .header-left .date {
   font-size: 13px;
   color: var(--muted);
-  font-weight: 400;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.weather-panel,
+.calendar-panel {
+  border: 1px solid rgba(138, 180, 248, 0.16);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(31, 34, 39, 0.96), rgba(23, 25, 29, 0.96));
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
+}
+
+.weather-panel {
+  min-height: 160px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.weather-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.weather-kicker,
+.calendar-kicker {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.weather-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.weather-temp {
+  color: var(--ink);
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.weather-icon {
+  color: var(--accent-amber);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.weather-condition {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+.weather-place {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.weather-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--warm-gray);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.weather-settings-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.weather-settings-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.weather-settings {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.weather-mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weather-mode-btn,
+.weather-save-btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--warm-gray);
+  cursor: pointer;
+}
+
+.weather-mode-btn {
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.weather-mode-btn.active {
+  background: rgba(138, 180, 248, 0.12);
+  border-color: rgba(138, 180, 248, 0.45);
+  color: var(--ink);
+}
+
+.weather-city-input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--warm-gray);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.weather-city-input:focus {
+  border-color: var(--accent-slate);
+  box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.12);
+}
+
+.weather-city-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.weather-save-btn {
+  padding: 8px 12px;
+  background: var(--accent-slate);
+  color: #0d1117;
+  border-color: var(--accent-slate);
+}
+
+.weather-save-btn:hover {
+  opacity: 0.92;
+}
+
+.calendar-panel {
+  padding: 16px;
+}
+
+.calendar-month {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendar-weekday,
+.calendar-cell {
+  min-width: 0;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.calendar-weekday {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.calendar-cell {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.calendar-empty {
+  opacity: 0;
+}
+
+.calendar-today {
+  color: #071018;
+  background: var(--accent-slate);
+  box-shadow: 0 0 0 3px rgba(138, 180, 248, 0.16);
 }
 
 @media (max-width: 720px) {
   header {
-    align-items: stretch;
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
   .header-search {
-    margin-left: 0;
     width: 100%;
-    flex-basis: auto;
+  }
+
+  .calendar-panel,
+  .weather-panel {
+    min-height: auto;
+  }
+
+  .header-left h1 {
+    font-size: 36px;
+  }
+
+  .weather-panel {
+    min-height: 0;
   }
 }
 
@@ -200,7 +425,7 @@ header {
 }
 
 .tab-cleanup-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   padding: 8px 20px;
@@ -267,10 +492,10 @@ header {
 }
 
 .section-header h2 {
-  font-family: 'Newsreader', serif;
-  font-weight: 400;
+  font-family: inherit;
+  font-weight: 700;
   font-size: 18px;
-  font-style: italic;
+  font-style: normal;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -370,7 +595,7 @@ header {
   font-weight: 600;
   font-size: 15px;
   color: var(--ink);
-  letter-spacing: -0.2px;
+  letter-spacing: 0;
 }
 
 .mission-tag {
@@ -550,7 +775,7 @@ header {
 
 .mission-page-count {
   font-size: 20px;
-  font-family: 'Newsreader', serif;
+  font-family: inherit;
   font-weight: 300;
   color: var(--ink);
   line-height: 1;
@@ -572,7 +797,7 @@ header {
 
 .action-btn {
   font-size: 11px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-weight: 500;
   padding: 5px 14px;
   border-radius: 4px;
@@ -645,7 +870,7 @@ header {
   transform: translateX(-50%) translateY(80px);
   background: #f5efe6;
   color: #15110e;
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 500;
   padding: 12px 24px;
@@ -691,7 +916,7 @@ footer {
 }
 
 .stat-num {
-  font-family: 'Newsreader', serif;
+  font-family: inherit;
   font-size: 28px;
   font-weight: 300;
   color: var(--ink);
@@ -713,7 +938,7 @@ footer {
 }
 
 .refresh-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-size: 11px;
   font-weight: 500;
   color: var(--accent-amber);
@@ -822,12 +1047,12 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .empty-title {
-  font-family: 'Newsreader', serif;
+  font-family: inherit;
   font-size: 20px;
-  font-weight: 400;
-  font-style: italic;
+  font-weight: 800;
+  font-style: normal;
   color: var(--ink);
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
 }
 
 .empty-subtitle {
@@ -906,7 +1131,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* "Update now" button — small, filled, sage green */
 .update-banner-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 500;
   color: #10100f;
@@ -1132,7 +1357,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-toggle {
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 500;
   color: var(--muted);
@@ -1173,7 +1398,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 .archive-search {
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-size: 12px;
   width: 100%;
   padding: 8px 12px;
