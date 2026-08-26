@@ -1,6 +1,7 @@
 # ChromeTab
 
 ChromeTab replaces Chrome's new tab page with a dashboard of your open tabs, grouped by domain.
+![alt text](image.png)
 
 ## What it does
 
