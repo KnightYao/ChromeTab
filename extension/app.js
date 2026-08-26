@@ -1,5 +1,5 @@
 /* ================================================================
-   Tab Out — Dashboard App (Pure Extension Edition)
+   ChromeTab — Dashboard App (Pure Extension Edition)
 
    This file is the brain of the dashboard. Now that the dashboard
    IS the extension page (not inside an iframe), it can call
@@ -30,7 +30,7 @@ let openTabs = [];
  * fetchOpenTabs()
  *
  * Reads all currently open browser tabs directly from Chrome.
- * Sets the extensionId flag so we can identify Tab Out's own pages.
+ * Sets the extensionId flag so we can identify ChromeTab's own pages.
  */
 async function fetchOpenTabs() {
   try {
@@ -45,7 +45,7 @@ async function fetchOpenTabs() {
       title:    t.title,
       windowId: t.windowId,
       active:   t.active,
-      // Flag Tab Out's own pages so we can detect duplicate new tabs
+      // Flag ChromeTab's own pages so we can detect duplicate new tabs
       isTabOut: t.url === newtabUrl || t.url === 'chrome://newtab/',
     }));
   } catch {
@@ -172,7 +172,7 @@ async function closeDuplicateTabs(urls, keepOne = true) {
 /**
  * closeTabOutDupes()
  *
- * Closes all duplicate Tab Out new-tab pages except the current one.
+ * Closes all duplicate ChromeTab new-tab pages except the current one.
  */
 async function closeTabOutDupes() {
   const extensionId = chrome.runtime.id;
@@ -186,7 +186,7 @@ async function closeTabOutDupes() {
 
   if (tabOutTabs.length <= 1) return;
 
-  // Keep the active Tab Out tab in the CURRENT window — that's the one the
+  // Keep the active ChromeTab tab in the CURRENT window — that's the one the
   // user is looking at right now. Falls back to any active one, then the first.
   const keep =
     tabOutTabs.find(t => t.active && t.windowId === currentWindow.id) ||
@@ -749,7 +749,7 @@ function getRealTabs() {
 /**
  * checkTabOutDupes()
  *
- * Counts how many Tab Out pages are open. If more than 1,
+ * Counts how many ChromeTab pages are open. If more than 1,
  * shows a banner offering to close the extras.
  */
 function checkTabOutDupes() {
@@ -966,7 +966,7 @@ async function renderDeferredColumn() {
     }
 
   } catch (err) {
-    console.warn('[tab-out] Could not load saved tabs:', err);
+    console.warn('[chrometab] Could not load saved tabs:', err);
     column.style.display = 'none';
   }
 }
@@ -1175,7 +1175,7 @@ async function renderStaticDashboard() {
   const statTabs = document.getElementById('statTabs');
   if (statTabs) statTabs.textContent = openTabs.length;
 
-  // --- Check for duplicate Tab Out tabs ---
+  // --- Check for duplicate ChromeTab tabs ---
   checkTabOutDupes();
 
   // --- Render "Saved for Later" column ---
@@ -1202,8 +1202,8 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
-  // ---- Close duplicate Tab Out tabs ----
-  if (action === 'close-tabout-dupes') {
+  // ---- Close duplicate ChromeTab tabs ----
+  if (action === 'close-chrometab-dupes') {
     await closeTabOutDupes();
     playCloseSound();
     const banner = document.getElementById('tabOutDupeBanner');
@@ -1212,7 +1212,7 @@ document.addEventListener('click', async (e) => {
       banner.style.opacity = '0';
       setTimeout(() => { banner.style.display = 'none'; banner.style.opacity = '1'; }, 400);
     }
-    showToast('Closed extra Tab Out tabs');
+    showToast('Closed extra ChromeTab tabs');
     return;
   }
 
@@ -1289,7 +1289,7 @@ document.addEventListener('click', async (e) => {
     try {
       await saveTabForLater({ url: tabUrl, title: tabTitle });
     } catch (err) {
-      console.error('[tab-out] Failed to save tab:', err);
+      console.error('[chrometab] Failed to save tab:', err);
       showToast('Failed to save tab');
       return;
     }
@@ -1462,7 +1462,7 @@ document.addEventListener('submit', async (e) => {
     await searchBing(query);
     if (input) input.value = '';
   } catch (err) {
-    console.warn('[tab-out] Bing search failed:', err);
+    console.warn('[chrometab] Bing search failed:', err);
     showToast('Search failed');
   }
 });
@@ -1505,7 +1505,7 @@ document.addEventListener('input', async (e) => {
     archiveList.innerHTML = results.map(item => renderArchiveItem(item)).join('')
       || '<div style="font-size:12px;color:var(--muted);padding:8px 0">No results</div>';
   } catch (err) {
-    console.warn('[tab-out] Archive search failed:', err);
+    console.warn('[chrometab] Archive search failed:', err);
   }
 });
 
