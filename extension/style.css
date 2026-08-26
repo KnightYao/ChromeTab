@@ -84,6 +84,41 @@ header {
   margin-top: 20px;
 }
 
+.word-card {
+  width: min(520px, 100%);
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(138, 180, 248, 0.16);
+  border-radius: 8px;
+  background: rgba(21, 26, 35, 0.82);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.word-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.word-text {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.word-meaning {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  min-width: 0;
+}
+
 .bing-search-input {
   flex: 1;
   min-width: 0;
@@ -137,19 +172,23 @@ header {
 .header-left h1 {
   font-family: inherit;
   font-weight: 800;
-  font-size: 52px;
+  font-size: 30px;
   letter-spacing: 0;
   color: var(--ink);
   margin-bottom: 8px;
-  line-height: 0.98;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-left .date {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   font-weight: 600;
   letter-spacing: 0;
-  text-transform: uppercase;
+  text-transform: none;
+  line-height: 1.35;
 }
 
 .weather-panel,
@@ -365,13 +404,17 @@ header {
     width: 100%;
   }
 
+  .word-card {
+    width: 100%;
+  }
+
   .calendar-panel,
   .weather-panel {
     min-height: auto;
   }
 
   .header-left h1 {
-    font-size: 36px;
+    font-size: 24px;
   }
 
   .weather-panel {

@@ -13,7 +13,7 @@
 
 
   <!-- ================================================================
-       HEADER — weather, greeting/search, and monthly calendar
+       HEADER — weather, quote/search, and monthly calendar
        ================================================================ -->
   <header>
     <aside class="weather-panel" id="weatherPanel" aria-label="Weather">
@@ -52,9 +52,9 @@
 
     <div class="header-main">
       <div class="header-left">
-        <!-- "Good afternoon" — written by getGreeting() in app.js -->
+        <!-- Random Chinese quote — written by getGreeting() in app.js -->
         <h1 id="greeting"></h1>
-        <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
+        <!-- Chinese date — written by getDateDisplay() in app.js -->
         <div class="date" id="dateDisplay"></div>
       </div>
       <form class="header-search" id="bingSearchForm" role="search">
@@ -73,6 +73,12 @@
           </svg>
         </button>
       </form>
+      <section class="word-card" id="wordCard" aria-label="每日英文单词">
+        <div class="word-main">
+          <div class="word-text" id="wordText"></div>
+          <div class="word-meaning" id="wordMeaning"></div>
+        </div>
+      </section>
     </div>
 
     <aside class="calendar-panel" id="calendarPanel" aria-label="Current month calendar"></aside>
@@ -178,6 +184,7 @@
 <!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->
 <!-- If the file doesn't exist, that's fine — app.js uses sensible defaults. -->
 <script src="config.local.js" onerror="/* no personal config, that's fine */"></script>
+<script src="words.js"></script>
 
 <!-- Main dashboard logic — loads last so the DOM is ready -->
 <script src="app.js"></script>

@@ -47,7 +47,71 @@ const WEATHER_ICONS = {
 };
 
 const WEATHER_SETTINGS_KEY = 'weatherSettings';
+const QUOTE_QUEUE_KEY = 'chrometabQuoteQueue';
+const WORD_QUEUE_KEY = 'chrometabWordQueue';
+const WORD_QUEUE_VERSION_KEY = 'chrometabWordQueueVersion';
+const WORD_POOL_VERSION = 4;
 let weatherDraftMode = 'ip';
+
+const CHINESE_QUOTES = [
+  { text: '天行健，君子以自强不息。', source: '《周易》' },
+  { text: '地势坤，君子以厚德载物。', source: '《周易》' },
+  { text: '路漫漫其修远兮，吾将上下而求索。', source: '屈原' },
+  { text: '业精于勤，荒于嬉；行成于思，毁于随。', source: '韩愈' },
+  { text: '先天下之忧而忧，后天下之乐而乐。', source: '范仲淹' },
+  { text: '天下兴亡，匹夫有责。', source: '顾炎武' },
+  { text: '海纳百川，有容乃大。', source: '林则徐' },
+  { text: '知之者不如好之者，好之者不如乐之者。', source: '孔子' },
+  { text: '学而不思则罔，思而不学则殆。', source: '孔子' },
+  { text: '三人行，必有我师焉。', source: '孔子' },
+  { text: '己所不欲，勿施于人。', source: '孔子' },
+  { text: '君子坦荡荡，小人长戚戚。', source: '孔子' },
+  { text: '知者不惑，仁者不忧，勇者不惧。', source: '孔子' },
+  { text: '不患人之不己知，患不知人也。', source: '孔子' },
+  { text: '敏而好学，不耻下问。', source: '孔子' },
+  { text: '温故而知新，可以为师矣。', source: '孔子' },
+  { text: '知人者智，自知者明。', source: '老子' },
+  { text: '千里之行，始于足下。', source: '老子' },
+  { text: '合抱之木，生于毫末。', source: '老子' },
+  { text: '上善若水，水善利万物而不争。', source: '老子' },
+  { text: '大直若屈，大巧若拙，大辩若讷。', source: '老子' },
+  { text: '祸兮福之所倚，福兮祸之所伏。', source: '老子' },
+  { text: '富贵不能淫，贫贱不能移，威武不能屈。', source: '孟子' },
+  { text: '穷则独善其身，达则兼济天下。', source: '孟子' },
+  { text: '生于忧患，死于安乐。', source: '孟子' },
+  { text: '得道者多助，失道者寡助。', source: '孟子' },
+  { text: '锲而不舍，金石可镂。', source: '荀子' },
+  { text: '青，取之于蓝，而青于蓝。', source: '荀子' },
+  { text: '不积跬步，无以至千里。', source: '荀子' },
+  { text: '不积小流，无以成江海。', source: '荀子' },
+  { text: '精诚所至，金石为开。', source: '王充' },
+  { text: '老骥伏枥，志在千里。', source: '曹操' },
+  { text: '非淡泊无以明志，非宁静无以致远。', source: '诸葛亮' },
+  { text: '鞠躬尽瘁，死而后已。', source: '诸葛亮' },
+  { text: '读书破万卷，下笔如有神。', source: '杜甫' },
+  { text: '会当凌绝顶，一览众山小。', source: '杜甫' },
+  { text: '笔落惊风雨，诗成泣鬼神。', source: '杜甫' },
+  { text: '安得广厦千万间，大庇天下寒士俱欢颜。', source: '杜甫' },
+  { text: '长风破浪会有时，直挂云帆济沧海。', source: '李白' },
+  { text: '天生我材必有用，千金散尽还复来。', source: '李白' },
+  { text: '黄沙百战穿金甲，不破楼兰终不还。', source: '王昌龄' },
+  { text: '欲穷千里目，更上一层楼。', source: '王之涣' },
+  { text: '海内存知己，天涯若比邻。', source: '王勃' },
+  { text: '沉舟侧畔千帆过，病树前头万木春。', source: '刘禹锡' },
+  { text: '千淘万漉虽辛苦，吹尽狂沙始到金。', source: '刘禹锡' },
+  { text: '纸上得来终觉浅，绝知此事要躬行。', source: '陆游' },
+  { text: '山重水复疑无路，柳暗花明又一村。', source: '陆游' },
+  { text: '位卑未敢忘忧国。', source: '陆游' },
+  { text: '人生自古谁无死，留取丹心照汗青。', source: '文天祥' },
+  { text: '问渠那得清如许，为有源头活水来。', source: '朱熹' },
+  { text: '等闲识得东风面，万紫千红总是春。', source: '朱熹' },
+  { text: '世事洞明皆学问，人情练达即文章。', source: '曹雪芹' },
+  { text: '苟利国家生死以，岂因祸福避趋之。', source: '林则徐' },
+  { text: '我自横刀向天笑，去留肝胆两昆仑。', source: '谭嗣同' },
+  { text: '横眉冷对千夫指，俯首甘为孺子牛。', source: '鲁迅' },
+  { text: '寄意寒星荃不察，我以我血荐轩辕。', source: '鲁迅' },
+];
+
 
 
 /* ----------------------------------------------------------------
@@ -635,11 +699,14 @@ function renderCalendar() {
   const year = now.getFullYear();
   const month = now.getMonth();
   const today = now.getDate();
-  const monthLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const monthLabel = new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+  }).format(now);
   const firstDay = new Date(year, month, 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
   const cells = [];
 
   for (const day of weekdays) cells.push(`<span class="calendar-weekday">${day}</span>`);
@@ -650,7 +717,7 @@ function renderCalendar() {
   }
 
   el.innerHTML = `
-    <div class="calendar-kicker">This month</div>
+    <div class="calendar-kicker">本月</div>
     <div class="calendar-month">${monthLabel}</div>
     <div class="calendar-grid">${cells.join('')}</div>
   `;
@@ -705,26 +772,96 @@ function timeAgo(dateStr) {
   return diffDays + ' days ago';
 }
 
-/**
- * getGreeting() — "Good morning / afternoon / evening"
- */
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+function shuffleItems(items) {
+  const arr = items.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
-/**
- * getDateDisplay() — "Friday, April 4, 2026"
- */
-function getDateDisplay() {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year:    'numeric',
-    month:   'long',
-    day:     'numeric',
+function getWordPool() {
+  const words = globalThis.CSDN_WORDS || globalThis.window?.CSDN_WORDS;
+  return Array.isArray(words) ? words : [];
+}
+
+async function pickRandomQuote() {
+  if (!CHINESE_QUOTES.length) return { text: '', source: '' };
+
+  const { [QUOTE_QUEUE_KEY]: queue = [] } = await chrome.storage.local.get(QUOTE_QUEUE_KEY);
+  let nextQueue = Array.isArray(queue) ? queue.filter(item => item && item.text) : [];
+
+  if (nextQueue.length === 0) {
+    nextQueue = shuffleItems(CHINESE_QUOTES);
+  }
+
+  const [quote, ...rest] = nextQueue;
+  await chrome.storage.local.set({ [QUOTE_QUEUE_KEY]: rest });
+  return quote || { text: '', source: '' };
+}
+
+async function pickRandomWord() {
+  const wordPool = getWordPool();
+  if (!wordPool.length) return null;
+  const wordsByNo = new Map(wordPool.map(word => [word.no, word]));
+
+  const stored = await chrome.storage.local.get([WORD_QUEUE_KEY, WORD_QUEUE_VERSION_KEY]);
+  const queue = stored[WORD_QUEUE_KEY] || [];
+  const version = stored[WORD_QUEUE_VERSION_KEY];
+  let nextQueue = Array.isArray(queue)
+    ? queue
+        .map(item => typeof item === 'object' && item ? item.no : Number(item))
+        .filter(no => Number.isInteger(no) && wordsByNo.has(no))
+    : [];
+
+  if (version !== WORD_POOL_VERSION || nextQueue.length === 0) {
+    nextQueue = shuffleItems(wordPool.map(word => word.no));
+  }
+
+  const [wordNo, ...rest] = nextQueue;
+  await chrome.storage.local.set({
+    [WORD_QUEUE_KEY]: rest,
+    [WORD_QUEUE_VERSION_KEY]: WORD_POOL_VERSION,
   });
+  return wordsByNo.get(wordNo) || null;
+}
+
+async function renderWordCard() {
+  const cardEl = document.getElementById('wordCard');
+  if (!cardEl) return;
+
+  try {
+    const word = await pickRandomWord();
+    if (!word) {
+      cardEl.style.display = 'none';
+      return;
+    }
+
+    cardEl.style.display = '';
+    const wordEl = document.getElementById('wordText');
+    const meaningEl = document.getElementById('wordMeaning');
+
+    if (wordEl) wordEl.textContent = word.phonetic ? `${word.word} ${word.phonetic}` : word.word;
+    if (meaningEl) meaningEl.textContent = word.meaning || `原词表第 ${word.no} 个`;
+  } catch (err) {
+    console.warn('[chrometab] Word card failed:', err);
+    cardEl.style.display = 'none';
+  }
+}
+
+async function getGreeting() {
+  const quote = await pickRandomQuote();
+  return quote.source ? `${quote.text} — ${quote.source}` : quote.text;
+}
+
+function getDateDisplay() {
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(new Date());
 }
 
 
@@ -1238,7 +1375,7 @@ async function renderStaticDashboard() {
   // --- Header ---
   const greetingEl = document.getElementById('greeting');
   const dateEl     = document.getElementById('dateDisplay');
-  if (greetingEl) greetingEl.textContent = getGreeting();
+  if (greetingEl) greetingEl.textContent = await getGreeting();
   if (dateEl)     dateEl.textContent     = getDateDisplay();
 
   // --- Fetch tabs ---
@@ -1381,6 +1518,9 @@ async function renderStaticDashboard() {
 
   // --- Render "Saved for Later" column ---
   await renderDeferredColumn();
+
+  // Word card is decorative; keep the open-tabs dashboard independent.
+  renderWordCard().catch(err => console.warn('[chrometab] Word card failed:', err));
 }
 
 async function renderDashboard() {
