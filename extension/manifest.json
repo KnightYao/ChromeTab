@@ -3,7 +3,7 @@
   "name": "ChromeTab",
   "version": "1.0.0",
   "description": "Keep tabs on your tabs. New tab page that groups your open tabs by domain and lets you close them with style.",
-  "permissions": ["tabs", "activeTab", "storage"],
+  "permissions": ["tabs", "activeTab", "storage", "history", "topSites"],
   "host_permissions": [
     "https://ipapi.co/*",
     "https://geocoding-api.open-meteo.com/*",

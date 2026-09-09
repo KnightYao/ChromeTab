@@ -95,6 +95,110 @@ header {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
+.recent-sites-card {
+  width: min(520px, 100%);
+  margin-top: 12px;
+  padding: 14px 16px 12px;
+  border: 1px solid rgba(125, 211, 167, 0.14);
+  border-radius: 8px;
+  background: rgba(21, 26, 35, 0.82);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.recent-sites-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.recent-sites-kicker {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.recent-sites-heading {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
+.recent-sites-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.recent-sites-list {
+  display: grid;
+  gap: 6px;
+}
+
+.recent-site-item {
+  width: 100%;
+  border: 1px solid rgba(154, 145, 138, 0.12);
+  background: rgba(25, 27, 31, 0.75);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.recent-site-item:hover {
+  border-color: rgba(138, 180, 248, 0.28);
+  background: rgba(32, 35, 41, 0.92);
+  transform: translateY(-1px);
+}
+
+.recent-site-favicon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+.recent-site-text {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  flex: 1;
+}
+
+.recent-site-title {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-site-visits {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.recent-site-arrow {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+}
+
 .word-refresh-btn {
   position: absolute;
   top: 12px;
@@ -439,6 +543,10 @@ header {
   }
 
   .word-card {
+    width: 100%;
+  }
+
+  .recent-sites-card {
     width: 100%;
   }
 

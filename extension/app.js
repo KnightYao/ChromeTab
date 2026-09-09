@@ -51,6 +51,7 @@ const QUOTE_QUEUE_KEY = 'chrometabQuoteQueue';
 const WORD_QUEUE_KEY = 'chrometabWordQueue';
 const WORD_QUEUE_VERSION_KEY = 'chrometabWordQueueVersion';
 const WORD_POOL_VERSION = 5;
+const RECENT_SITES_LIMIT = 3;
 let weatherDraftMode = 'ip';
 
 const CHINESE_QUOTES = [
@@ -150,6 +151,194 @@ async function fetchOpenTabs() {
     // chrome.tabs API unavailable (shouldn't happen in an extension page)
     openTabs = [];
   }
+}
+
+function normalizeRecentSiteUrl(url) {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    parsed.hash = '';
+    if (parsed.hostname === 'www.google.com' && parsed.pathname === '/url') {
+      const target = parsed.searchParams.get('q') || parsed.searchParams.get('url');
+      return target || parsed.toString();
+    }
+    return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+  } catch {
+    return url;
+  }
+}
+
+function normalizeRecentSiteHost(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+function shouldSkipRecentSiteUrl(url) {
+  if (!url) return true;
+  return (
+    url.startsWith('chrome://') ||
+    url.startsWith('chrome-extension://') ||
+    url.startsWith('about:') ||
+    url.startsWith('edge://') ||
+    url.startsWith('brave://') ||
+    url.startsWith('file://')
+  );
+}
+
+function buildRecentSiteLabel(url, title) {
+  const cleanTitle = smartTitle(stripTitleNoise(title || ''), url);
+  if (cleanTitle && cleanTitle !== url) return cleanTitle;
+  try {
+    return friendlyDomain(new URL(url).hostname);
+  } catch {
+    return url;
+  }
+}
+
+async function getRecentSites() {
+  try {
+    const topSites = await chrome.topSites.get();
+    const items = Array.isArray(topSites) ? topSites : [];
+
+    const counts = new Map();
+    const latest = new Map();
+
+    for (const item of items || []) {
+      if (!item || shouldSkipRecentSiteUrl(item.url)) continue;
+      const host = normalizeRecentSiteHost(item.url);
+      if (!host) continue;
+      const key = host;
+      if (!key) continue;
+
+      counts.set(key, (counts.get(key) || 0) + 1);
+      const last = item.lastVisitTime || 0;
+      if (!latest.has(key) || last > latest.get(key).lastVisitTime) {
+        latest.set(key, {
+          url: item.url,
+          title: item.title || '',
+          lastVisitTime: last,
+        });
+      }
+    }
+
+    return [...latest.entries()]
+      .map(([key, item]) => ({
+        key,
+        host: key,
+        url: item.url,
+        title: item.title || item.url,
+        visits: counts.get(key) || 0,
+        lastVisitTime: item.lastVisitTime || 0,
+      }))
+      .filter(item => item.url)
+      .slice(0, RECENT_SITES_LIMIT);
+  } catch (err) {
+    console.warn('[chrometab] Recent sites lookup failed, falling back to history:', err);
+    try {
+      const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const items = await chrome.history.search({
+        text: ' ',
+        startTime: cutoff,
+        maxResults: 100,
+      });
+
+      const counts = new Map();
+      const latest = new Map();
+
+      for (const item of items || []) {
+        if (!item || shouldSkipRecentSiteUrl(item.url)) continue;
+        const host = normalizeRecentSiteHost(item.url);
+        if (!host) continue;
+        counts.set(host, (counts.get(host) || 0) + Math.max(1, item.visitCount || 0));
+        const last = item.lastVisitTime || 0;
+        if (!latest.has(host) || last > latest.get(host).lastVisitTime) {
+          latest.set(host, {
+            url: item.url,
+            title: item.title || '',
+            lastVisitTime: last,
+          });
+        }
+      }
+
+      return [...latest.entries()]
+        .map(([key, item]) => ({
+          key,
+          host: key,
+          url: item.url,
+          title: item.title || item.url,
+          visits: counts.get(key) || 0,
+          lastVisitTime: item.lastVisitTime || 0,
+        }))
+        .filter(item => item.visits > 0)
+        .sort((a, b) => b.visits - a.visits || b.lastVisitTime - a.lastVisitTime)
+        .slice(0, RECENT_SITES_LIMIT);
+    } catch (fallbackErr) {
+      console.warn('[chrometab] Recent sites fallback failed:', fallbackErr);
+      return [];
+    }
+  }
+}
+
+async function renderRecentSites() {
+  const listEl = document.getElementById('recentSitesList');
+  const countEl = document.getElementById('recentSitesCount');
+  const cardEl = document.getElementById('recentSitesCard');
+  if (!listEl || !countEl || !cardEl) return;
+
+  const sites = await getRecentSites();
+  if (!sites.length) {
+    cardEl.style.display = 'none';
+    return;
+  }
+
+  cardEl.style.display = 'block';
+  countEl.textContent = `${sites.length} site${sites.length !== 1 ? 's' : ''}`;
+  listEl.innerHTML = sites.map(site => {
+    let domain = '';
+    try { domain = new URL(site.url).hostname; } catch {}
+    const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32` : '';
+    const safeUrl = (site.url || '').replace(/"/g, '&quot;');
+    const label = buildRecentSiteLabel(site.url, site.title).replace(/"/g, '&quot;');
+    const visits = site.visits > 1 ? `<span class="recent-sites-visits">${site.visits} visits</span>` : '<span class="recent-sites-visits">1 visit</span>';
+
+    return `
+      <button class="recent-site-item" type="button" data-action="focus-recent-site" data-site-url="${safeUrl}" title="${label}">
+        ${faviconUrl ? `<img class="recent-site-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
+        <span class="recent-site-text">
+          <span class="recent-site-title">${label}</span>
+          ${visits}
+        </span>
+        <span class="recent-site-arrow">↗</span>
+      </button>`;
+  }).join('');
+}
+
+async function focusOrOpenUrl(url) {
+  if (!url) return;
+  const allTabs = await chrome.tabs.query({});
+  let match = allTabs.find(t => t.url === url);
+
+  if (!match) {
+    try {
+      const targetHost = new URL(url).hostname;
+      match = allTabs.find(t => {
+        try { return new URL(t.url).hostname === targetHost; }
+        catch { return false; }
+      });
+    } catch {}
+  }
+
+  if (match) {
+    await chrome.tabs.update(match.id, { active: true });
+    await chrome.windows.update(match.windowId, { focused: true });
+    return;
+  }
+
+  await chrome.tabs.create({ url, active: true });
 }
 
 /**
@@ -1521,6 +1710,7 @@ async function renderStaticDashboard() {
 
   // Word card is decorative; keep the open-tabs dashboard independent.
   renderWordCard().catch(err => console.warn('[chrometab] Word card failed:', err));
+  renderRecentSites().catch(err => console.warn('[chrometab] Recent sites card failed:', err));
 }
 
 async function renderDashboard() {
@@ -1602,6 +1792,12 @@ document.addEventListener('click', async (e) => {
   if (action === 'focus-tab') {
     const tabUrl = actionEl.dataset.tabUrl;
     if (tabUrl) await focusTab(tabUrl);
+    return;
+  }
+
+  if (action === 'focus-recent-site') {
+    const tabUrl = actionEl.dataset.siteUrl;
+    if (tabUrl) await focusOrOpenUrl(tabUrl);
     return;
   }
 
