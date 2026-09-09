@@ -396,16 +396,32 @@ async function closeTabsExact(urls) {
   await fetchOpenTabs();
 }
 
+async function closeTabsByIds(ids) {
+  const tabIds = [...new Set((ids || []).filter(Number.isInteger))];
+  if (tabIds.length === 0) return;
+  await chrome.tabs.remove(tabIds);
+  await fetchOpenTabs();
+}
+
 /**
  * focusTab(url)
  *
  * Switches Chrome to the tab with the given URL (exact match first,
  * then hostname fallback). Also brings the window to the front.
  */
-async function focusTab(url) {
-  if (!url) return;
+async function focusTab(url, tabId = null) {
+  if (!url && !Number.isInteger(tabId)) return;
   const allTabs = await chrome.tabs.query({});
   const currentWindow = await chrome.windows.getCurrent();
+
+  if (Number.isInteger(tabId)) {
+    const exactTab = allTabs.find(t => t.id === tabId);
+    if (exactTab) {
+      await chrome.tabs.update(exactTab.id, { active: true });
+      await chrome.windows.update(exactTab.windowId, { focused: true });
+      return;
+    }
+  }
 
   // Try exact URL match first
   let matches = allTabs.filter(t => t.url === url);
@@ -1309,14 +1325,14 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
+    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
-        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
+        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
         </button>
-        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
+        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" title="Close this tab">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -1390,14 +1406,14 @@ function renderDomainCard(group) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
+    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
-        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
+        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
         </button>
-        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
+        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" title="Close this tab">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -1791,7 +1807,8 @@ document.addEventListener('click', async (e) => {
   // ---- Focus a specific tab ----
   if (action === 'focus-tab') {
     const tabUrl = actionEl.dataset.tabUrl;
-    if (tabUrl) await focusTab(tabUrl);
+    const tabId = Number(actionEl.dataset.tabId);
+    if (tabUrl || Number.isInteger(tabId)) await focusTab(tabUrl, tabId);
     return;
   }
 
@@ -1804,14 +1821,18 @@ document.addEventListener('click', async (e) => {
   // ---- Close a single tab ----
   if (action === 'close-single-tab') {
     e.stopPropagation(); // don't trigger parent chip's focus-tab
+    const tabId = Number(actionEl.dataset.tabId);
     const tabUrl = actionEl.dataset.tabUrl;
-    if (!tabUrl) return;
+    if (!Number.isInteger(tabId) && !tabUrl) return;
 
     // Close the tab in Chrome directly
-    const allTabs = await chrome.tabs.query({});
-    const match   = allTabs.find(t => t.url === tabUrl);
-    if (match) await chrome.tabs.remove(match.id);
-    await fetchOpenTabs();
+    if (Number.isInteger(tabId)) {
+      await closeTabsByIds([tabId]);
+    } else {
+      const allTabs = await chrome.tabs.query({});
+      const match   = allTabs.find(t => t.url === tabUrl);
+      if (match) await closeTabsByIds([match.id]);
+    }
 
     playCloseSound();
 
@@ -1847,9 +1868,10 @@ document.addEventListener('click', async (e) => {
   // ---- Save a single tab for later (then close it) ----
   if (action === 'defer-single-tab') {
     e.stopPropagation();
+    const tabId     = Number(actionEl.dataset.tabId);
     const tabUrl   = actionEl.dataset.tabUrl;
     const tabTitle = actionEl.dataset.tabTitle || tabUrl;
-    if (!tabUrl) return;
+    if (!Number.isInteger(tabId) && !tabUrl) return;
 
     // Save to chrome.storage.local
     try {
@@ -1861,10 +1883,13 @@ document.addEventListener('click', async (e) => {
     }
 
     // Close the tab in Chrome
-    const allTabs = await chrome.tabs.query({});
-    const match   = allTabs.find(t => t.url === tabUrl);
-    if (match) await chrome.tabs.remove(match.id);
-    await fetchOpenTabs();
+    if (Number.isInteger(tabId)) {
+      await closeTabsByIds([tabId]);
+    } else {
+      const allTabs = await chrome.tabs.query({});
+      const match   = allTabs.find(t => t.url === tabUrl);
+      if (match) await closeTabsByIds([match.id]);
+    }
 
     // Animate chip out
     const chip = actionEl.closest('.page-chip');
@@ -1928,12 +1953,15 @@ document.addEventListener('click', async (e) => {
     });
     if (!group) return;
 
+    const tabIds    = group.tabs.map(t => t.id).filter(Number.isInteger);
     const urls      = group.tabs.map(t => t.url);
     // Landing pages and custom groups (whose domain key isn't a real hostname)
     // must use exact URL matching to avoid closing unrelated tabs
     const useExact  = group.domain === '__landing-pages__' || !!group.label;
 
-    if (useExact) {
+    if (tabIds.length > 0) {
+      await closeTabsByIds(tabIds);
+    } else if (useExact) {
       await closeTabsExact(urls);
     } else {
       await closeTabsByUrls(urls);
@@ -1994,10 +2022,11 @@ document.addEventListener('click', async (e) => {
 
   // ---- Close ALL open tabs ----
   if (action === 'close-all-open-tabs') {
-    const allUrls = openTabs
+    const allTabIds = openTabs
       .filter(t => t.url && !t.url.startsWith('chrome') && !t.url.startsWith('about:'))
-      .map(t => t.url);
-    await closeTabsByUrls(allUrls);
+      .map(t => t.id)
+      .filter(Number.isInteger);
+    await closeTabsByIds(allTabIds);
     playCloseSound();
 
     document.querySelectorAll('#openTabsMissions .mission-card').forEach(c => {
