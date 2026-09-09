@@ -220,8 +220,12 @@ function buildRecentSiteLabel(url, title) {
 
 async function getRecentSites() {
   try {
-    const topSites = await chrome.topSites.get();
-    const items = Array.isArray(topSites) ? topSites : [];
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const items = await chrome.history.search({
+      text: '',
+      startTime: cutoff,
+      maxResults: 1000,
+    });
 
     const counts = new Map();
     const latest = new Map();
@@ -233,7 +237,7 @@ async function getRecentSites() {
       const key = host;
       if (!key) continue;
 
-      counts.set(key, (counts.get(key) || 0) + 1);
+      counts.set(key, (counts.get(key) || 0) + Math.max(1, item.visitCount || 0));
       const last = item.lastVisitTime || 0;
       if (!latest.has(key) || last > latest.get(key).lastVisitTime) {
         latest.set(key, {
@@ -254,51 +258,11 @@ async function getRecentSites() {
         lastVisitTime: item.lastVisitTime || 0,
       }))
       .filter(item => item.url)
+      .sort((a, b) => b.visits - a.visits || b.lastVisitTime - a.lastVisitTime)
       .slice(0, RECENT_SITES_LIMIT);
   } catch (err) {
-    console.warn('[chrometab] Recent sites lookup failed, falling back to history:', err);
-    try {
-      const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      const items = await chrome.history.search({
-        text: ' ',
-        startTime: cutoff,
-        maxResults: 100,
-      });
-
-      const counts = new Map();
-      const latest = new Map();
-
-      for (const item of items || []) {
-        if (!item || shouldSkipRecentSiteUrl(item.url)) continue;
-        const host = normalizeRecentSiteHost(item.url);
-        if (!host) continue;
-        counts.set(host, (counts.get(host) || 0) + Math.max(1, item.visitCount || 0));
-        const last = item.lastVisitTime || 0;
-        if (!latest.has(host) || last > latest.get(host).lastVisitTime) {
-          latest.set(host, {
-            url: item.url,
-            title: item.title || '',
-            lastVisitTime: last,
-          });
-        }
-      }
-
-      return [...latest.entries()]
-        .map(([key, item]) => ({
-          key,
-          host: key,
-          url: item.url,
-          title: item.title || item.url,
-          visits: counts.get(key) || 0,
-          lastVisitTime: item.lastVisitTime || 0,
-        }))
-        .filter(item => item.visits > 0)
-        .sort((a, b) => b.visits - a.visits || b.lastVisitTime - a.lastVisitTime)
-        .slice(0, RECENT_SITES_LIMIT);
-    } catch (fallbackErr) {
-      console.warn('[chrometab] Recent sites fallback failed:', fallbackErr);
-      return [];
-    }
+    console.warn('[chrometab] Recent sites lookup failed:', err);
+    return [];
   }
 }
 
