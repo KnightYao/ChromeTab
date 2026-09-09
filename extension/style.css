@@ -1473,6 +1473,13 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   transition: color 0.15s;
 }
 
+.deferred-favicon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
 .deferred-title:hover {
   color: var(--accent-amber);
 }
