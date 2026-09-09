@@ -161,6 +161,7 @@ async function fetchOpenTabs() {
       id:       t.id,
       url:      t.url,
       title:    t.title,
+      favIconUrl: t.favIconUrl || '',
       windowId: t.windowId,
       active:   t.active,
       // Flag ChromeTab's own pages so we can detect duplicate new tabs
@@ -283,7 +284,11 @@ async function renderRecentSites() {
   listEl.innerHTML = sites.map(site => {
     let domain = '';
     try { domain = new URL(site.url).hostname; } catch {}
-    const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32` : '';
+    const openTab = openTabs.find(tab => {
+      try { return new URL(tab.url).hostname === domain && tab.favIconUrl; }
+      catch { return false; }
+    });
+    const faviconUrl = openTab ? openTab.favIconUrl : '';
     const safeUrl = escapeHtml(safeHref(site.url));
     const label = escapeHtml(buildRecentSiteLabel(site.url, site.title));
     const visits = site.visits > 1 ? `<span class="recent-sites-visits">${site.visits} visits</span>` : '<span class="recent-sites-visits">1 visit</span>';
@@ -518,6 +523,7 @@ async function saveTabForLater(tab) {
     id:        Date.now().toString(),
     url:       tab.url,
     title:     tab.title,
+    favIconUrl: tab.favIconUrl || '',
     savedAt:   new Date().toISOString(),
     completed: false,
     dismissed: false,
@@ -1306,9 +1312,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     const chipClass = count > 1 ? ' chip-has-dupes' : '';
     const safeUrl   = escapeHtml(safeHref(tab.url));
     const safeTitle = escapeHtml(label);
-    let domain = '';
-    try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
+    const faviconUrl = tab.favIconUrl || '';
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${escapeHtml(faviconUrl)}" alt="">` : ''}
       <span class="chip-text">${escapeHtml(label)}</span>${dupeTag}
@@ -1387,9 +1391,7 @@ function renderDomainCard(group) {
     const chipClass = count > 1 ? ' chip-has-dupes' : '';
     const safeUrl   = escapeHtml(safeHref(tab.url));
     const safeTitle = escapeHtml(label);
-    let domain = '';
-    try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
+    const faviconUrl = tab.favIconUrl || '';
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-id="${tab.id}" data-tab-url="${safeUrl}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${escapeHtml(faviconUrl)}" alt="">` : ''}
       <span class="chip-text">${escapeHtml(label)}</span>${dupeTag}
@@ -1507,7 +1509,7 @@ async function renderDeferredColumn() {
 function renderDeferredItem(item) {
   let domain = '';
   try { domain = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+  const faviconUrl = item.faviconUrl || '';
   const ago = timeAgo(item.savedAt);
 
   return `
@@ -1515,7 +1517,7 @@ function renderDeferredItem(item) {
       <input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">
       <div class="deferred-info">
         <a href="${escapeHtml(safeHref(item.url))}" target="_blank" rel="noopener" class="deferred-title" title="${escapeHtml(item.title || '')}">
-          <img src="${escapeHtml(faviconUrl)}" alt="" class="deferred-favicon">${escapeHtml(item.title || item.url)}
+          ${faviconUrl ? `<img src="${escapeHtml(faviconUrl)}" alt="" class="deferred-favicon">` : ''}${escapeHtml(item.title || item.url)}
         </a>
         <div class="deferred-meta">
           <span>${escapeHtml(domain)}</span>
@@ -1855,11 +1857,12 @@ document.addEventListener('click', async (e) => {
     const tabId     = Number(actionEl.dataset.tabId);
     const tabUrl   = actionEl.dataset.tabUrl;
     const tabTitle = actionEl.dataset.tabTitle || tabUrl;
+    const tab       = openTabs.find(item => item.id === tabId);
     if (!Number.isInteger(tabId) && !tabUrl) return;
 
     // Save to chrome.storage.local
     try {
-      await saveTabForLater({ url: tabUrl, title: tabTitle });
+      await saveTabForLater({ url: tabUrl, title: tabTitle, favIconUrl: tab?.favIconUrl || '' });
     } catch (err) {
       console.error('[chrometab] Failed to save tab:', err);
       showToast('Failed to save tab');

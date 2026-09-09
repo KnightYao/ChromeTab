@@ -11,7 +11,7 @@ ChromeTab replaces Chrome's new tab page with a dashboard of your open tabs, gro
 - Lets you close tabs one by one or in groups
 - Flags duplicate tabs
 - Lets you save tabs for later in a local checklist
-- Shows weather from your current IP location or a saved custom city
+- Shows optional weather from your current IP location or a saved custom city
 
 ## Install with a coding agent
 Send your coding agent (Claude Code, Codex, etc.) this repo and say "install this":
@@ -39,7 +39,9 @@ cd ChromeTab
 
 - Saved tabs are stored in `chrome.storage.local`
 - Weather settings are stored in `chrome.storage.local`
-- Core tab management is local; the weather widget makes external requests
+- Tab data, saved tabs, quotes, and vocabulary stay local
+- The optional weather widget requests location/weather data from `ipapi.co` and Open-Meteo
+- Favicons use Chrome's tab metadata; no external favicon service is required
 - No Node.js, npm, or backend is required
 
 ## Update
