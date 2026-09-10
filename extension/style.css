@@ -534,6 +534,10 @@ header {
 }
 
 @media (max-width: 720px) {
+  .container {
+    padding: 24px 16px 56px;
+  }
+
   header {
     grid-template-columns: 1fr;
   }
@@ -561,6 +565,26 @@ header {
 
   .weather-panel {
     min-height: 0;
+  }
+
+  .tab-cleanup-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 14px 16px;
+  }
+
+  .tab-cleanup-left {
+    align-items: flex-start;
+  }
+
+  .tab-cleanup-btn {
+    width: 100%;
+  }
+
+  footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
   }
 }
 
@@ -701,8 +725,9 @@ header {
 
 /* ---- Mission Cards ---- */
 .missions {
-  columns: 280px;
-  column-gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
   margin-bottom: 40px;
 }
 
@@ -718,8 +743,6 @@ header {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  break-inside: avoid;       /* don't split a card across columns */
-  margin-bottom: 12px;       /* vertical spacing (replaces grid gap) */
 }
 
 /* Colored top border instead of side bar for grid cards */
@@ -1381,7 +1404,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 /* Open tabs column keeps the grid layout */
 .dashboard-columns .active-section {
   flex: 1;
-  min-width: 600px;
+  min-width: 0;
 }
 
 /* Saved for later column — fixed width on the right, scrolls independently */
@@ -1395,7 +1418,7 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 /* On narrow screens, stack vertically */
-@media (max-width: 800px) {
+@media (max-width: 960px) {
   .dashboard-columns {
     flex-direction: column;
   }
