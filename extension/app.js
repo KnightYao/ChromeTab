@@ -2009,6 +2009,11 @@ document.addEventListener('click', async (e) => {
 
   // ---- Close ALL open tabs ----
   if (action === 'close-all-open-tabs') {
+    const realTabCount = openTabs.filter(t =>
+      t.url && !t.url.startsWith('chrome') && !t.url.startsWith('about:')
+    ).length;
+    if (!window.confirm(`Close all ${realTabCount} open tabs?`)) return;
+
     const allTabIds = openTabs
       .filter(t => t.url && !t.url.startsWith('chrome') && !t.url.startsWith('about:'))
       .map(t => t.id)
